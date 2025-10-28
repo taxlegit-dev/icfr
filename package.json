@@ -6,11 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "studio": "cross-env NODE_ENV=development npx prisma studio --schema=./prisma/schema.prisma --ignore-config --hostname 0.0.0.0 --port 5555 --browser none",
+    "prisma:generate": "cross-env NODE_ENV=development npx prisma generate --schema=./prisma/schema.prisma --ignore-config",
+    "prisma:migrate": "cross-env NODE_ENV=development npx prisma migrate dev --schema=./prisma/schema.prisma --ignore-config",
+    "prisma:version": "npx prisma --version --ignore-config",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
-    "next": "16.0.0",
+    "next": "^16.0.0",
     "prisma": "^6.18.0",
     "react": "19.2.0",
     "react-dom": "19.2.0"
@@ -21,9 +26,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

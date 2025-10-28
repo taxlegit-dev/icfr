@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  experimental: {
+    reactCompiler: true, // ✅ correct placement
+  },
+  // Turbopack disable karne ke liye kuch nahi karna - by default off hai
 };
 
 export default nextConfig;
