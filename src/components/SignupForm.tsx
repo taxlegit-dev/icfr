@@ -42,8 +42,10 @@ export default function SignupForm() {
         setMessage(data.error || "Failed to send OTP");
       }
     } catch (error) {
-      setMessage("Error sending OTP");
+      console.error("Error sending OTP:", error);
+      setMessage("Something went wrong while sending OTP. Please try again.");
     }
+
     setLoading(false);
   };
 
@@ -78,6 +80,7 @@ export default function SignupForm() {
         setMessage("Verification failed");
       }
     } catch (error) {
+      console.error("Error vrifying OTP:", error);
       setMessage("Error verifying OTP");
     }
     setLoading(false);

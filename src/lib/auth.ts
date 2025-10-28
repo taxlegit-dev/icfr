@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const data = await response.json();
+          // const data = await response.json();
 
           // Find or create user
           let user = await prisma.user.findUnique({
