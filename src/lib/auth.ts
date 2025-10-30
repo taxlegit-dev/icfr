@@ -205,7 +205,7 @@ export const authOptions: NextAuthOptions = {
                 image: user.image,
                 firstName,
                 lastName,
-                phone: null, // phone is optional
+                phone: null, 
               },
             });
 
