@@ -2,41 +2,25 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}
+import { useEffect } from "react";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
-    // Initialize from localStorage
-    if (typeof window !== "undefined") {
-      const storedAdmin = localStorage.getItem("adminUser");
-      return storedAdmin ? JSON.parse(storedAdmin) : null;
-    }
-    return null;
-  });
 
   useEffect(() => {
-    if (status !== "loading" && !adminUser) {
+    console.log("Session status:", status);
+    console.log("Session data:", session);
+    if (status !== "loading" && (!session || session.user.role !== "ADMIN")) {
       router.push("/admin/login");
     }
-  }, [status, router, adminUser]);
+  }, [status, router, session]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminUser");
-    setAdminUser(null);
-    router.push("/admin/login");
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/admin/login" });
   };
 
-  if (status === "loading" && !adminUser) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
         <div className="text-center">
@@ -47,11 +31,11 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!adminUser) {
+  if (!session || session.user.role !== "ADMIN") {
     return null; // Will redirect
   }
 
-  const user = adminUser;
+  const user = session.user;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">

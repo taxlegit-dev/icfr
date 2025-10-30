@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ export default function AdminLoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -26,27 +29,17 @@ export default function AdminLoginPage() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const result = await signIn("admin", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (result?.ok) {
         setMessage("Admin login successful!");
-        // Store admin user data in localStorage
-        localStorage.setItem("adminUser", JSON.stringify(data.user));
-        // Redirect to admin dashboard
-        setTimeout(() => {
-          window.location.href = "/admin/dashboard";
-        }, 1500);
+        router.push("/admin/dashboard");
       } else {
-        setMessage(data.error || "Invalid credentials");
+        setMessage(result?.error || "Invalid credentials");
       }
     } catch (error) {
       console.error("Admin login error:", error);
