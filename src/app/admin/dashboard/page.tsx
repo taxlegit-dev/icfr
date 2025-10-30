@@ -25,10 +25,41 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    console.log("Session data:", session);
+    console.log("Auth status:", status);
     if (status !== "loading" && !adminUser) {
       router.push("/admin/login");
     }
   }, [status, router, adminUser]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/users", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        console.log("Fetch response status:", res);
+
+        if (!res.ok) throw new Error("Failed to fetch user");
+
+        const data = await res.json();
+        setAdminUser(data.user); 
+        localStorage.setItem("adminUser", JSON.stringify(data.user));
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        router.push("/admin/login");
+      }
+    };
+
+    if (status === "authenticated") {
+      fetchUser();
+    }
+  }, [status, router]);
 
   const handleLogout = () => {
     localStorage.removeItem("adminUser");

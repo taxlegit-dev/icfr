@@ -40,6 +40,9 @@ const customPrismaAdapter = {
 
 export const authOptions: NextAuthOptions = {
   adapter: customPrismaAdapter,
+  // @ts-expect-error
+  trustHost: true,
+  debug: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
