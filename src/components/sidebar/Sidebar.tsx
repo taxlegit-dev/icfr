@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  role?: 'admin' | 'user';
+  role?: string
 }
 
 export default function Sidebar({ role = 'user' }: SidebarProps) {
@@ -20,12 +20,12 @@ export default function Sidebar({ role = 'user' }: SidebarProps) {
   const menuItems = [
     {
       name: 'Dashboard',
-      href: role === 'admin' ? '/admin/dashboard' : '/user/dashboard',
+      href: role.toLowerCase() === 'admin' ? '/admin/dashboard' : '/user/dashboard',
       icon: LayoutDashboard,
     },
     {
       name: 'Users',
-      href: role === 'admin' ? '/admin/users' : '/user/users',
+      href: role.toLowerCase() === 'admin' ? '/admin/dashboard/users' : '/dashboard/users',
       icon: Users,
     },
   ];
@@ -33,7 +33,7 @@ export default function Sidebar({ role = 'user' }: SidebarProps) {
   const bottomMenuItems = [
     {
       name: 'Profile',
-      href: role === 'admin' ? '/admin/profile' : '/user/profile',
+      href: role.toLowerCase() === 'admin' ? '/admin/profile' : '/user/profile',
       icon: UserCircle,
     },
     {

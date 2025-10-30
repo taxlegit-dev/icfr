@@ -1,31 +1,42 @@
-// app/api/users/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma"; // adjust your prisma import
+import { authOptions } from "@/lib/auth"; // your NextAuth config
+import { prisma } from "@/lib/prisma"; // assuming you're using Prisma
 
-export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  console.log("Session in /api/users:", session);
+export async function GET() {
+    try {
+        const session = await getServerSession(authOptions);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-      },
-    });
+        // Optional: check role (only allow admin)
+        if (session.user.role?.toLowerCase() !== "admin") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
 
-    return NextResponse.json({ users }, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
-  }
+        // Fetch users from DB
+        const users = await prisma.user.findMany({
+            where: {
+                role: 'USER'
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                role: true,
+                emailVerified: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return NextResponse.json(users);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
 }
