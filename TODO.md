@@ -1,19 +1,14 @@
-# TODO: Signup Form with OTP and NextAuth
+# TODO List for Admin Login Implementation
 
-- [x] Update `prisma/schema.prisma`: Add User model (id, firstName, lastName, phone, createdAt) and OTP model (id, phone, otp, expiresAt)
-- [x] Create `src/app/api/send-otp/route.ts`: API to generate and save OTP
-- [x] Create `src/app/api/verify-otp/route.ts`: API to verify OTP and create user
-- [x] Create `src/components/SignupForm.tsx`: React component for the signup form
-- [x] Update `src/app/page.tsx`: Replace placeholder with SignupForm component
-- [x] Run `npx prisma generate` to update Prisma client
-- [x] Test the form locally
-- [x] Install next-auth and @next-auth/prisma-adapter
-- [x] Create NextAuth configuration with custom OTP provider
-- [x] Set up API route for NextAuth ([...nextauth].ts)
-- [x] Update SignupForm to use NextAuth signIn/signUp methods
-- [x] Add session management and protected routes
-- [x] Update navbar to show login/logout based on session
-- [x] Create SessionProvider component
-- [x] Add NextAuth type declarations
-- [x] Update Prisma schema for NextAuth compatibility
-- [x] Run `npx prisma db push --accept-data-loss` to update database
+- [x] Create `src/app/admin/login/page.tsx` with a simple email/password form using NextAuth signIn for admin credentials.
+- [x] Modify `src/lib/auth.ts` to add a new CredentialsProvider named "admin" that checks for hardcoded email admin@taxlegit.com and password admin123, returning a dummy admin user object on success.
+- [x] Test the admin login functionality to ensure it works correctly.
+- [x] Update Prisma schema to include role and password fields.
+- [x] Create admin API endpoint at `/api/admin-login` for secure verification.
+- [x] Update seed file to create admin user with hashed password.
+- [x] Create admin dashboard at `/admin/dashboard` with role-based access control.
+- [x] Fix TypeScript types for role and password fields.
+- [x] Add password visibility toggle to login form.
+- [x] Fix redirect issue by using localStorage for session management.
+- [x] Generate Prisma client and push schema changes.
+- [x] Seed the database with admin user.
