@@ -59,17 +59,8 @@ export const authOptions: NextAuthOptions = {
 
           const isSignup = credentials.isSignup === "true";
 
-          if (user) {
-            // User exists - Login scenario
-            if (isSignup) {
-              throw new Error("User already exists. Please login instead");
-            }
-          } else {
-            // User doesn't exist - Signup scenario
-            if (!isSignup) {
-              throw new Error("User not found. Please signup first");
-            }
-
+          if (isSignup) {
+            // Signup scenario - user should not exist (already checked in send-otp)
             if (!credentials.firstName || !credentials.lastName) {
               throw new Error("First name and last name are required");
             }
@@ -84,6 +75,11 @@ export const authOptions: NextAuthOptions = {
             });
 
             console.log("✅ New user created (OTP):", user.id, user.phone);
+          } else {
+            // Login scenario - user should exist (already checked in send-otp)
+            if (!user) {
+              throw new Error("User not found");
+            }
           }
 
           // Delete OTP after successful verification
@@ -178,7 +174,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       // Handle Google OAuth - create/update user in database
       if (account?.provider === "google") {
         try {
@@ -209,6 +205,7 @@ export const authOptions: NextAuthOptions = {
                 image: user.image,
                 firstName,
                 lastName,
+                phone: null, // phone is optional
               },
             });
 
@@ -244,7 +241,7 @@ export const authOptions: NextAuthOptions = {
 
       return true;
     },
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user }) {
       // On sign in, add user data to token
       if (user) {
         token.id = user.id;

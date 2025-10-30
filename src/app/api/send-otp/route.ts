@@ -3,11 +3,37 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone } = await request.json();
+    const { phone, isSignup } = await request.json();
 
     if (!phone) {
       return NextResponse.json(
         { error: "Phone number is required" },
+        { status: 400 }
+      );
+    }
+
+    if (typeof isSignup !== "boolean") {
+      return NextResponse.json(
+        { error: "isSignup flag is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check user existence based on signup/login mode
+    const existingUser = await prisma.user.findUnique({
+      where: { phone },
+    });
+
+    if (isSignup && existingUser) {
+      return NextResponse.json(
+        { error: "User already exists. Please login instead." },
+        { status: 400 }
+      );
+    }
+
+    if (!isSignup && !existingUser) {
+      return NextResponse.json(
+        { error: "User not found. Please signup first." },
         { status: 400 }
       );
     }

@@ -8,6 +8,8 @@
 
 ## Tasks
 
-- [ ] Update SignupForm.tsx to send `isSignup` flag in sendOtp request
-- [ ] Update /api/send-otp/route.ts to validate user existence before sending OTP
+- [x] Update SignupForm.tsx to send `isSignup` flag in sendOtp request
+- [x] Update /api/send-otp/route.ts to validate user existence before sending OTP
+- [x] Update auth.ts to remove user existence checks from OTP provider's authorize function
+- [x] Update TODO.md to mark tasks as completed
 - [ ] Test the updated flow for both signup and login scenarios

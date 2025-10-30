@@ -32,7 +32,7 @@ export default function SignupForm() {
       const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formData.phone }),
+        body: JSON.stringify({ phone: formData.phone, isSignup: !isLogin }),
       });
       const data = await res.json();
       if (res.ok) {
