@@ -1,45 +1,11 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 
-// Custom adapter to handle Google OAuth user creation with firstName/lastName
-const customPrismaAdapter = {
-  ...PrismaAdapter(prisma),
-  createUser: async (data: {
-    id?: string;
-    email: string;
-    emailVerified?: Date | null;
-    name?: string | null;
-    image?: string | null;
-  }) => {
-    // For Google OAuth, split name into firstName and lastName
-    let firstName = "";
-    let lastName = "";
-
-    if (data.name) {
-      const nameParts = data.name.trim().split(" ");
-      firstName = nameParts[0] || "";
-      lastName = nameParts.slice(1).join(" ") || "";
-    }
-
-    return prisma.user.create({
-      data: {
-        email: data.email,
-        emailVerified: data.emailVerified,
-        image: data.image,
-        firstName,
-        lastName,
-        phone: "", // Google users don't have phone, so set empty string
-      },
-    });
-  },
-};
-
 export const authOptions: NextAuthOptions = {
-  adapter: customPrismaAdapter,
+  // Remove adapter - we'll handle user creation manually for both providers
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -51,71 +17,96 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
-      name: "otp",
+      id: "otp",
+      name: "OTP",
       credentials: {
         phone: { label: "Phone", type: "tel" },
         otp: { label: "OTP", type: "text" },
         firstName: { label: "First Name", type: "text" },
         lastName: { label: "Last Name", type: "text" },
+        isSignup: { label: "Is Signup", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.phone || !credentials?.otp) {
-          return null;
+          throw new Error("Phone and OTP are required");
         }
 
         try {
-          // Verify OTP through our existing API
-          const response = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/verify-otp`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                phone: credentials.phone,
-                otp: credentials.otp,
-                firstName: credentials.firstName,
-                lastName: credentials.lastName,
-              }),
-            }
-          );
+          // Find the OTP record
+          const otpRecord = await prisma.oTP.findUnique({
+            where: { phone: credentials.phone },
+          });
 
-          if (!response.ok) {
-            return null;
+          if (!otpRecord) {
+            throw new Error("OTP not found or expired");
           }
 
-          // const data = await response.json();
+          // Check if OTP is expired
+          if (new Date() > otpRecord.expiresAt) {
+            await prisma.oTP.delete({ where: { phone: credentials.phone } });
+            throw new Error("OTP has expired");
+          }
 
-          // Find or create user
+          // Verify OTP
+          if (otpRecord.otp !== credentials.otp) {
+            throw new Error("Invalid OTP");
+          }
+
+          // Check if user exists
           let user = await prisma.user.findUnique({
             where: { phone: credentials.phone },
           });
 
-          if (!user) {
-            // This should have been created during signup, but just in case
+          const isSignup = credentials.isSignup === "true";
+
+          if (user) {
+            // User exists - Login scenario
+            if (isSignup) {
+              throw new Error("User already exists. Please login instead");
+            }
+          } else {
+            // User doesn't exist - Signup scenario
+            if (!isSignup) {
+              throw new Error("User not found. Please signup first");
+            }
+
+            if (!credentials.firstName || !credentials.lastName) {
+              throw new Error("First name and last name are required");
+            }
+
+            // Create new user
             user = await prisma.user.create({
               data: {
+                firstName: credentials.firstName,
+                lastName: credentials.lastName,
                 phone: credentials.phone,
-                firstName: credentials.firstName || "",
-                lastName: credentials.lastName || "",
               },
             });
+
+            console.log("✅ New user created (OTP):", user.id, user.phone);
           }
 
+          // Delete OTP after successful verification
+          await prisma.oTP.delete({ where: { phone: credentials.phone } });
+
           return {
-            id: user.id.toString(),
+            id: user.id,
             phone: user.phone,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            email: user.email,
+            image: user.image,
           };
         } catch (error) {
-          console.error("Auth error:", error);
-          return null;
+          console.error("❌ OTP Auth error:", error);
+          throw error;
         }
       },
     }),
     CredentialsProvider({
-      name: "admin",
+      id: "admin",
+      name: "Admin",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -124,7 +115,7 @@ export const authOptions: NextAuthOptions = {
         const email = credentials?.email?.toLowerCase();
         if (!email || !credentials?.password) {
           console.log("Missing email or password");
-          return null;
+          throw new Error("Email and password are required");
         }
 
         try {
@@ -132,16 +123,26 @@ export const authOptions: NextAuthOptions = {
           // Find admin user in DB
           const adminUser = await prisma.user.findUnique({
             where: { email },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              password: true,
+              role: true,
+              image: true,
+            },
           });
 
           if (!adminUser) {
             console.log("User not found for email:", email);
-            return null;
+            throw new Error("Invalid credentials");
           }
 
           if (!adminUser.password) {
             console.log("User has no password for email:", email);
-            return null;
+            throw new Error("Invalid credentials");
           }
 
           // Verify password
@@ -152,45 +153,121 @@ export const authOptions: NextAuthOptions = {
 
           if (!isValidPassword) {
             console.log("Password invalid for email:", email);
-            return null;
+            throw new Error("Invalid credentials");
           }
 
-          console.log("Admin login successful for email:", email);
+          console.log("✅ Admin login successful for email:", email);
           return {
-            id: adminUser.id.toString(),
+            id: adminUser.id,
             email: adminUser.email,
             firstName: adminUser.firstName,
             lastName: adminUser.lastName,
             phone: adminUser.phone,
             role: adminUser.role,
+            image: adminUser.image,
           };
         } catch (error) {
-          console.error("Admin auth error:", error);
-          return null;
+          console.error("❌ Admin auth error:", error);
+          throw error;
         }
       },
     }),
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt", // JWT for all authentication methods
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // Handle Google OAuth - create/update user in database
+      if (account?.provider === "google") {
+        try {
+          const email = user.email;
+          if (!email) return false;
+
+          // Check if user already exists
+          let existingUser = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (!existingUser) {
+            // Split name into firstName and lastName
+            let firstName = "";
+            let lastName = "";
+
+            if (user.name) {
+              const nameParts = user.name.trim().split(" ");
+              firstName = nameParts[0] || "";
+              lastName = nameParts.slice(1).join(" ") || "";
+            }
+
+            // Create new user
+            existingUser = await prisma.user.create({
+              data: {
+                email,
+                emailVerified: new Date(),
+                image: user.image,
+                firstName,
+                lastName,
+              },
+            });
+
+            console.log(
+              "✅ New user created (Google):",
+              existingUser.id,
+              existingUser.email
+            );
+          } else {
+            // Update existing user's image and emailVerified if needed
+            await prisma.user.update({
+              where: { email },
+              data: {
+                image: user.image,
+                emailVerified: new Date(),
+              },
+            });
+          }
+
+          // Update user object with database values
+          user.id = existingUser.id;
+          user.firstName = existingUser.firstName;
+          user.lastName = existingUser.lastName;
+          user.role = existingUser.role;
+          user.phone = existingUser.phone;
+
+          return true;
+        } catch (error) {
+          console.error("❌ Google sign in error:", error);
+          return false;
+        }
+      }
+
+      return true;
+    },
+    async jwt({ token, user, account, trigger }) {
+      // On sign in, add user data to token
       if (user) {
+        token.id = user.id;
         token.phone = user.phone;
         token.firstName = user.firstName;
         token.lastName = user.lastName;
-        token.role = user.role; // Add role to token for admin
+        token.role = user.role;
+        token.email = user.email;
+        token.image = user.image;
       }
+
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!;
+      // Send properties to the client
+      if (token && session.user) {
+        session.user.id = token.id as string;
         session.user.phone = token.phone as string;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
-        session.user.role = token.role as string; // Add role to session for admin
+        session.user.role = token.role as string;
+        session.user.email = token.email as string;
+        session.user.image = token.image as string;
       }
       return session;
     },
@@ -198,4 +275,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  debug: process.env.NODE_ENV === "development",
 };

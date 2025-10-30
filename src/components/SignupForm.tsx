@@ -65,10 +65,13 @@ export default function SignupForm() {
       const result = await signIn("otp", {
         phone: formData.phone,
         otp: formData.otp,
-        firstName: isLogin ? undefined : formData.firstName,
-        lastName: isLogin ? undefined : formData.lastName,
+        firstName: isLogin ? "" : formData.firstName, // ✅ Empty string instead of undefined
+        lastName: isLogin ? "" : formData.lastName, // ✅ Empty string instead of undefined
+        isSignup: String(!isLogin), // ✅ Convert boolean to string "true" or "false"
         redirect: false,
       });
+
+      console.log("Sign in result:", result);
 
       if (result?.ok) {
         setMessage(isLogin ? "Login successful!" : "Signup successful!");
@@ -77,10 +80,10 @@ export default function SignupForm() {
           window.location.href = "/";
         }, 1500);
       } else {
-        setMessage("Verification failed");
+        setMessage(result?.error || "Verification failed");
       }
     } catch (error) {
-      console.error("Error vrifying OTP:", error);
+      console.error("Error verifying OTP:", error);
       setMessage("Error verifying OTP");
     }
     setLoading(false);
@@ -97,7 +100,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className=" text-black min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="text-black min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8 transition-all duration-300">
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-800">
@@ -109,7 +112,7 @@ export default function SignupForm() {
 
           {/* Google Sign In Button */}
           <button
-            onClick={() => signIn("google")}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
             className="w-full bg-white border border-gray-300 text-gray-700 p-3 rounded-lg hover:bg-gray-50 transition-all duration-300 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mb-4 flex items-center justify-center"
           >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
