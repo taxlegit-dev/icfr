@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
+import bcrypt from "bcryptjs";
 
 // Custom adapter to handle Google OAuth user creation with firstName/lastName
 const customPrismaAdapter = {
@@ -105,9 +106,66 @@ export const authOptions: NextAuthOptions = {
             phone: user.phone,
             firstName: user.firstName,
             lastName: user.lastName,
+            role: user.role,
           };
         } catch (error) {
           console.error("Auth error:", error);
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
+      name: "admin",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email?.toLowerCase();
+        if (!email || !credentials?.password) {
+          console.log("Missing email or password");
+          return null;
+        }
+
+        try {
+          console.log("Admin login attempt for email:", email);
+          // Find admin user in DB
+          const adminUser = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (!adminUser) {
+            console.log("User not found for email:", email);
+            return null;
+          }
+
+          if (!adminUser.password) {
+            console.log("User has no password for email:", email);
+            return null;
+          }
+
+          // Verify password
+          const isValidPassword = await bcrypt.compare(
+            credentials.password,
+            adminUser.password
+          );
+
+          if (!isValidPassword) {
+            console.log("Password invalid for email:", email);
+            return null;
+          }
+
+          console.log("Admin login successful for email:", email);
+          return {
+            id: adminUser.id.toString(),
+            email: adminUser.email,
+            firstName: adminUser.firstName,
+            lastName: adminUser.lastName,
+            phone: adminUser.phone,
+            role: adminUser.role,
+          };
+        } catch (error) {
+          console.error("Admin auth error:", error);
           return null;
         }
       },
@@ -122,6 +180,7 @@ export const authOptions: NextAuthOptions = {
         token.phone = user.phone;
         token.firstName = user.firstName;
         token.lastName = user.lastName;
+        token.role = user.role; // Add role to token for admin
       }
       return token;
     },
@@ -131,6 +190,7 @@ export const authOptions: NextAuthOptions = {
         session.user.phone = token.phone as string;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
+        session.user.role = token.role as string; // Add role to session for admin
       }
       return session;
     },
