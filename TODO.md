@@ -10,14 +10,12 @@
   - Return JSON response with "processes" array
 
 - [x] Edit `src/app/generate-sop/page.tsx`
-
   - Modify `handleSubmit` to send POST request to `/api/generate-sop` with answers
   - Add state for `processes` (array) and `selectedProcesses` (array)
   - After successful response, display processes as selectable checkboxes
   - Handle loading and error states for the API call
 
 - [ ] Test OpenAI integration
-
   - Verify API call works with sample data
   - Check error handling for invalid responses or API failures
 

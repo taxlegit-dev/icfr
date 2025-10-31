@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
+import "dotenv/config";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,48 +13,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { answers } = body;
+    const { process: processName } = body;
 
-    if (!answers || typeof answers !== "object") {
+    if (!processName || typeof processName !== "string") {
       return NextResponse.json(
-        { error: "Answers are required" },
+        { error: "Process name is required" },
         { status: 400 }
       );
     }
 
-    // Fetch questions to map answers
-    const questions = await prisma.question.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const prompt = `You are a business process expert trained to identify subprocesses for business operations.
 
-    // Construct company details from questions and answers
-    let companyDetails = "";
-    questions.forEach((question) => {
-      const answer = answers[question.id];
-      if (answer !== null && answer !== undefined && answer !== "") {
-        companyDetails += `${question.questionText}: ${answer}\n`;
-      }
-    });
-
-    const prompt = `You are a business process expert trained to identify core operational processes for organizations.
-
-Based on the details provided below, suggest relevant business processes that should have defined SOPs or internal controls.
+For the business process "${processName}", suggest relevant subprocesses that should have defined SOPs or internal controls.
 
 Return your answer in this JSON format only:
 {
-  "processes": ["Process 1", "Process 2", "Process 3", ...]
+  "process": "${processName}",
+  "subprocesses": ["Subprocess 1", "Subprocess 2", "Subprocess 3", ...]
 }
 
-Company details:
-
-${companyDetails}
-
 Example:
-If Industry = Manufacturing → return processes like Recruitment, Training, Production, Quality, Finance, Sales, HR.`;
+If Process = Recruitment → return subprocesses like Job Posting, Screening, Interviewing, Offer, Onboarding.
+If Process = Production → return subprocesses like Raw Material Procurement, Manufacturing, Quality Control, Packaging, Shipping.`;
 
-    console.log("Prompt sent to OpenAI:", prompt);
+    console.log("Prompt sent to OpenAI for subprocesses:", prompt);
 
     // Call OpenAI API
     const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -92,7 +74,7 @@ If Industry = Manufacturing → return processes like Recruitment, Training, Pro
       const errorData = await response.json();
       console.error("OpenAI API error:", errorData);
       return NextResponse.json(
-        { error: "Failed to generate processes" },
+        { error: "Failed to generate subprocesses" },
         { status: 500 }
       );
     }
@@ -119,16 +101,22 @@ If Industry = Manufacturing → return processes like Recruitment, Training, Pro
       );
     }
 
-    if (!parsedResponse.processes || !Array.isArray(parsedResponse.processes)) {
+    if (
+      !parsedResponse.subprocesses ||
+      !Array.isArray(parsedResponse.subprocesses)
+    ) {
       return NextResponse.json(
-        { error: "Invalid processes format" },
+        { error: "Invalid subprocesses format" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ processes: parsedResponse.processes });
+    return NextResponse.json({
+      process: parsedResponse.process || processName,
+      subprocesses: parsedResponse.subprocesses,
+    });
   } catch (error) {
-    console.error("Error generating SOP:", error);
+    console.error("Error generating subprocesses:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
