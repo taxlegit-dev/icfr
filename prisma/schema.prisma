@@ -13,7 +13,7 @@ enum Role {
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id @default(uuid())
   userId            String
   type              String
   provider          String
@@ -32,7 +32,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -40,7 +40,7 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid())
   firstName     String
   lastName      String
   phone         String?   @unique
@@ -55,7 +55,7 @@ model User {
 }
 
 model OTP {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   phone     String   @unique
   otp       String
   expiresAt DateTime

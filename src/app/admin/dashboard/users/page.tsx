@@ -95,10 +95,11 @@ export default function UsersPage() {
               placeholder="Search by name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-gray-500 placeholder-gray-400"
             />
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           </div>
+
         </div>
 
         {/* Table */}
@@ -138,9 +139,8 @@ export default function UsersPage() {
                   filteredUsers.map((user, index) => (
                     <tr
                       key={user.id}
-                      className={`${
-                        index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                      } hover:bg-indigo-50 transition-colors duration-150`}
+                      className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                        } hover:bg-indigo-50 transition-colors duration-150`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
