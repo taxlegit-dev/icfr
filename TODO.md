@@ -1,10 +1,13 @@
-# TODO: Update Navbar for User Authentication
+# TODO: Implement Generate SOP Feature
 
-- [x] Update src/components/Navbar.tsx to conditionally render based on session status
-- [x] Add circular profile avatar when user is logged in
-- [x] Implement dropdown menu on profile click with Dashboard and Logout options
-- [ ] Test the navbar functionality after login
+## Steps to Complete
 
-# TODO: Create Basic User Dashboard
+- [ ] Create user-facing API route `/api/questions/route.ts` for fetching questions (GET, authenticated users)
+- [ ] Create frontend page `/app/generate-sop/page.tsx` to display questions and allow SOP generation
+- [ ] Update Navbar component to link "Generate SOP" to `/generate-sop`
+- [ ] Test the new page and API functionality
 
-- [x] Create src/app/dashboard/page.tsx with a basic dashboard layout
+## Progress Tracking
+
+- Started: [Date/Time]
+- Completed: [Date/Time]
