@@ -1,27 +1,31 @@
 // lib/sidebarLinks.ts
-import { LayoutDashboard, Users, User, Settings, FileText, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  User,
+  Settings,
+  FileText,
+  LogOut,
+  HelpCircle,
+} from "lucide-react";
 
 export const adminLinks = [
   {
     title: "Dashboard",
-    href: "/dashboard",
+    href: "/admin/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "Users",
-    href: "/dashboard/users",
+    href: "/admin/dashboard/users",
     icon: Users,
   },
   {
-    title: "Reports",
-    href: "/dashboard/reports",
-    icon: FileText,
+    title: "Dynamic Questions",
+    href: "/admin/dashboard/questions",
+    icon: HelpCircle,
   },
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
+
   {
     title: "Logout",
     href: "/logout",

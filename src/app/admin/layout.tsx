@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import Sidebar from '@/components/sidebar/Sidebar';
-import { useCurrentRole } from '@/components/hooks/auth/useCurrentRole';
+import { usePathname } from "next/navigation";
+import Sidebar from "@/components/sidebar/Sidebar";
+import { useCurrentRole } from "@/components/hooks/auth/useCurrentRole";
 
 export default function AdminLayout({
   children,
@@ -10,10 +10,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const role = useCurrentRole(); // 👈 get role from hook
+  const role = useCurrentRole(); // 👈 get ro
 
   // Hide sidebar only on login page
-  const hideSidebar = pathname === '/admin/login';
+  const hideSidebar = pathname === "/admin/login";
 
   return (
     <div className="flex h-screen">
@@ -22,8 +22,8 @@ export default function AdminLayout({
 
       {/* Main content */}
       <main
-        className={`flex-1 bg-gray-50 p-6 overflow-y-auto ${
-          hideSidebar ? 'w-full' : ''
+        className={`flex-1 bg-gray-50 p-6 overflow-y-auto text-black ${
+          hideSidebar ? "w-full" : ""
         }`}
       >
         {children}

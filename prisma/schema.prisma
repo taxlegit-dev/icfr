@@ -61,3 +61,12 @@ model OTP {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model Question {
+  id           String   @id @default(cuid())
+  questionText String
+  inputType    String
+  options      Json?    // Array of strings for dropdown/radio/checkbox
+  isRequired   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
