@@ -1,9 +1,18 @@
-'use client';
+"use client";
 import { useEffect, useState, useMemo } from "react";
 import { User, Mail, Phone, Shield, Clock, Search } from "lucide-react";
 
+interface AppUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  role: "ADMIN" | "USER" | string;
+}
+
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,8 +24,12 @@ export default function UsersPage() {
         if (!res.ok) throw new Error(`Error: ${res.status}`);
         const data = await res.json();
         setUsers(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -35,7 +48,7 @@ export default function UsersPage() {
     const query = searchTerm.toLowerCase();
     return users.filter((user) =>
       [user.firstName, user.lastName, user.email, user.phone]
-        .filter(Boolean)
+        .filter((f): f is string => typeof f === "string")
         .some((field) => field.toLowerCase().includes(query))
     );
   }, [users, searchTerm]);
@@ -99,7 +112,6 @@ export default function UsersPage() {
             />
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           </div>
-
         </div>
 
         {/* Table */}
@@ -139,8 +151,9 @@ export default function UsersPage() {
                   filteredUsers.map((user, index) => (
                     <tr
                       key={user.id}
-                      className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-indigo-50 transition-colors duration-150`}
+                      className={`${
+                        index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                      } hover:bg-indigo-50 transition-colors duration-150`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -192,7 +205,7 @@ export default function UsersPage() {
                       colSpan={4}
                       className="text-center py-6 text-gray-500 italic"
                     >
-                      No users found matching "{searchTerm}"
+                      No users found matching &quot;{searchTerm}&quot;
                     </td>
                   </tr>
                 )}

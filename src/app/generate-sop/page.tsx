@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/shared/Loader";
@@ -8,16 +8,19 @@ import Loader from "@/components/shared/Loader";
 interface Question {
   id: string;
   questionText: string;
-  inputType: string;
+  inputType: "text" | "number" | "file" | "dropdown" | "radio" | "checkbox";
   options?: string[];
   isRequired: boolean;
 }
 
+type AnswerValue = string | number | File | string[] | null;
+
 export default function GenerateSOPPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,12 +38,9 @@ export default function GenerateSOPPage() {
   const fetchQuestions = async () => {
     try {
       const response = await fetch("/api/questions");
-      if (response.ok) {
-        const data = await response.json();
-        setQuestions(data.questions);
-      } else {
-        console.error("Failed to fetch questions");
-      }
+      if (!response.ok) throw new Error("Failed to fetch questions");
+      const data: { questions: Question[] } = await response.json();
+      setQuestions(data.questions);
     } catch (error) {
       console.error("Error fetching questions:", error);
     } finally {
@@ -48,21 +48,32 @@ export default function GenerateSOPPage() {
     }
   };
 
-  const handleInputChange = (questionId: string, value: any) => {
+  const handleInputChange = (questionId: string, value: AnswerValue) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
 
-    // Validate required fields
-    const missingRequired = questions.filter(
-      (q) => q.isRequired && (!answers[q.id] || answers[q.id].length === 0)
-    );
+    const missingRequired = questions.filter((q) => {
+      const answer = answers[q.id];
+
+      if (!q.isRequired) return false;
+
+      if (answer === null || answer === undefined) return true;
+
+      // Check empty string
+      if (typeof answer === "string" && answer.trim().length === 0) return true;
+
+      // Check empty array
+      if (Array.isArray(answer) && answer.length === 0) return true;
+
+      return false;
+    });
 
     if (missingRequired.length > 0) {
       alert("Please fill in all required fields.");
@@ -70,22 +81,19 @@ export default function GenerateSOPPage() {
       return;
     }
 
-    // Placeholder for SOP generation logic
-    // In a real implementation, this would send answers to an AI service
     console.log("Answers:", answers);
-
     alert("SOP generation feature coming soon! Your answers have been logged.");
     setSubmitting(false);
   };
 
   const renderInput = (question: Question) => {
-    const value = answers[question.id] || "";
+    const value = answers[question.id] ?? "";
 
     switch (question.inputType) {
       case "text":
         return (
           <textarea
-            value={value}
+            value={typeof value === "string" ? value : ""}
             onChange={(e) => handleInputChange(question.id, e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             rows={3}
@@ -98,9 +106,12 @@ export default function GenerateSOPPage() {
         return (
           <input
             type="number"
-            value={value}
-            onChange={(e) =>
-              handleInputChange(question.id, parseInt(e.target.value) || "")
+            value={typeof value === "number" ? value : ""}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              handleInputChange(
+                question.id,
+                e.target.value ? parseInt(e.target.value, 10) : null
+              )
             }
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Enter a number..."
@@ -112,8 +123,8 @@ export default function GenerateSOPPage() {
         return (
           <input
             type="file"
-            onChange={(e) =>
-              handleInputChange(question.id, e.target.files?.[0] || null)
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              handleInputChange(question.id, e.target.files?.[0] ?? null)
             }
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             required={question.isRequired}
@@ -123,7 +134,7 @@ export default function GenerateSOPPage() {
       case "dropdown":
         return (
           <select
-            value={value}
+            value={typeof value === "string" ? value : ""}
             onChange={(e) => handleInputChange(question.id, e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             required={question.isRequired}
@@ -161,23 +172,25 @@ export default function GenerateSOPPage() {
       case "checkbox":
         return (
           <div className="space-y-2">
-            {question.options?.map((option, index) => (
-              <label key={index} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  value={option}
-                  checked={Array.isArray(value) && value.includes(option)}
-                  onChange={(e) => {
-                    const currentValues = Array.isArray(value) ? value : [];
-                    const newValues = e.target.checked
-                      ? [...currentValues, option]
-                      : currentValues.filter((v) => v !== option);
-                    handleInputChange(question.id, newValues);
-                  }}
-                />
-                <span>{option}</span>
-              </label>
-            ))}
+            {question.options?.map((option, index) => {
+              const selectedValues = Array.isArray(value) ? value : [];
+              return (
+                <label key={index} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    value={option}
+                    checked={selectedValues.includes(option)}
+                    onChange={(e) => {
+                      const updatedValues = e.target.checked
+                        ? [...selectedValues, option]
+                        : selectedValues.filter((v) => v !== option);
+                      handleInputChange(question.id, updatedValues);
+                    }}
+                  />
+                  <span>{option}</span>
+                </label>
+              );
+            })}
           </div>
         );
 
@@ -185,7 +198,7 @@ export default function GenerateSOPPage() {
         return (
           <input
             type="text"
-            value={value}
+            value={typeof value === "string" ? value : ""}
             onChange={(e) => handleInputChange(question.id, e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Enter your answer..."
@@ -195,13 +208,8 @@ export default function GenerateSOPPage() {
     }
   };
 
-  if (status === "loading" || loading) {
-    return <Loader />;
-  }
-
-  if (!session) {
-    return null; // Redirecting to login
-  }
+  if (status === "loading" || loading) return <Loader />;
+  if (!session) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">

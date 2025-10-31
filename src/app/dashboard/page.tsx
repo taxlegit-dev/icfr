@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -13,10 +13,6 @@ export default function UserDashboard() {
       router.push("/login");
     }
   }, [status, router, session]);
-
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
-  };
 
   if (status === "loading") {
     return (
@@ -32,8 +28,6 @@ export default function UserDashboard() {
   if (!session) {
     return null; // Will redirect
   }
-
-  const user = session.user;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">

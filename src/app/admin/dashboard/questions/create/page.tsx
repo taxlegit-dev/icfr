@@ -104,6 +104,7 @@ export default function CreateQuestionPage() {
         router.push("/admin/dashboard/questions");
       }, 2000);
     } catch (err) {
+      console.log(err);
       setError("Failed to create question. Please try again.");
     } finally {
       setLoading(false);

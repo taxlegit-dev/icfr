@@ -2,11 +2,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Sparkles, User, ChevronDown, LogOut } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 
 export const Navbar = () => {
-  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -32,7 +31,7 @@ export const Navbar = () => {
 
         {/* Navigation Links */}
         <div className="hidden md:flex space-x-8 text-gray-300">
-          <Link href="#home" className="hover:text-purple-400 transition">
+          <Link href="/" className="hover:text-purple-400 transition">
             Home
           </Link>
           <Link href="#features" className="hover:text-purple-400 transition">
@@ -60,7 +59,7 @@ export const Navbar = () => {
                 className="flex items-center space-x-2 px-4 py-2 bg-slate-800 rounded-full hover:bg-slate-700 transition"
               >
                 {session.user?.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt="Profile"
                     className="w-8 h-8 rounded-full"
