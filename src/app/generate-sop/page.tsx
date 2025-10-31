@@ -346,8 +346,31 @@ export default function GenerateSOPPage() {
               </div>
 
               <div className="space-y-4">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedProcesses.length === processes.length &&
+                      processes.length > 0
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedProcesses(processes);
+                      } else {
+                        setSelectedProcesses([]);
+                      }
+                    }}
+                    className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                  <span className="text-white font-medium">
+                    Select All Processes
+                  </span>
+                </label>
                 {processes.map((process, index) => (
-                  <label key={index} className="flex items-center space-x-3">
+                  <label
+                    key={index}
+                    className="flex items-center space-x-3 ml-6"
+                  >
                     <input
                       type="checkbox"
                       checked={selectedProcesses.includes(process)}
@@ -415,13 +438,48 @@ export default function GenerateSOPPage() {
                   <h3 className="text-xl font-semibold text-white mb-4">
                     {activeTab} Subprocesses
                   </h3>
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedSubprocesses[activeTab]?.length ===
+                          subprocesses[activeTab]?.length &&
+                        subprocesses[activeTab]?.length > 0
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSubprocesses((prev) => ({
+                            ...prev,
+                            [activeTab]: subprocesses[activeTab] || [],
+                          }));
+                        } else {
+                          setSelectedSubprocesses((prev) => ({
+                            ...prev,
+                            [activeTab]: [],
+                          }));
+                        }
+                      }}
+                      className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                    />
+                    <span className="text-white font-medium">
+                      Select All Subprocesses
+                    </span>
+                  </label>
                   {subprocesses[activeTab].map((subprocess, index) => (
-                    <label key={index} className="flex items-center space-x-3">
+                    <label
+                      key={index}
+                      className="flex items-center space-x-3 ml-6"
+                    >
                       <input
                         type="checkbox"
-                        checked={selectedSubprocesses[activeTab]?.includes(subprocess) || false}
+                        checked={
+                          selectedSubprocesses[activeTab]?.includes(
+                            subprocess
+                          ) || false
+                        }
                         onChange={(e) => {
-                          const currentSelected = selectedSubprocesses[activeTab] || [];
+                          const currentSelected =
+                            selectedSubprocesses[activeTab] || [];
                           if (e.target.checked) {
                             setSelectedSubprocesses((prev) => ({
                               ...prev,
@@ -430,13 +488,17 @@ export default function GenerateSOPPage() {
                           } else {
                             setSelectedSubprocesses((prev) => ({
                               ...prev,
-                              [activeTab]: currentSelected.filter((s) => s !== subprocess),
+                              [activeTab]: currentSelected.filter(
+                                (s) => s !== subprocess
+                              ),
                             }));
                           }
                         }}
                         className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                       />
-                      <span className="text-white font-medium">{subprocess}</span>
+                      <span className="text-white font-medium">
+                        {subprocess}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -449,7 +511,9 @@ export default function GenerateSOPPage() {
                     alert("Subprocesses selected! Ready for SOP generation.");
                     // Here you can add logic to proceed with SOP generation for selected subprocesses
                   }}
-                  disabled={Object.values(selectedSubprocesses).every(arr => arr.length === 0)}
+                  disabled={Object.values(selectedSubprocesses).every(
+                    (arr) => arr.length === 0
+                  )}
                   className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Generate SOPs for Selected Subprocesses
