@@ -63,6 +63,8 @@ export const Navbar = () => {
                     src={session.user.image}
                     alt="Profile"
                     className="w-8 h-8 rounded-full"
+                    height={10}
+                    width={20}
                   />
                 ) : (
                   <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">

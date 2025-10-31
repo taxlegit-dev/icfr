@@ -23,6 +23,9 @@ export default function GenerateSOPPage() {
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [processes, setProcesses] = useState<string[]>([]);
+  const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
+  const [showProcesses, setShowProcesses] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -81,9 +84,29 @@ export default function GenerateSOPPage() {
       return;
     }
 
-    console.log("Answers:", answers);
-    alert("SOP generation feature coming soon! Your answers have been logged.");
-    setSubmitting(false);
+    try {
+      const response = await fetch("/api/generate-sop", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ answers }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate processes");
+      }
+
+      const data = await response.json();
+      setProcesses(data.processes);
+      setShowProcesses(true);
+    } catch (error) {
+      console.error("Error generating SOP:", error);
+      alert("Failed to generate processes. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderInput = (question: Question) => {
@@ -225,34 +248,85 @@ export default function GenerateSOPPage() {
             </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20"
-          >
-            <div className="space-y-6">
-              {questions.map((question, index) => (
-                <div key={question.id} className="space-y-2">
-                  <label className="block text-white font-medium">
-                    {index + 1}. {question.questionText}
-                    {question.isRequired && (
-                      <span className="text-red-400 ml-1">*</span>
-                    )}
-                  </label>
-                  {renderInput(question)}
-                </div>
-              ))}
-            </div>
+          {!showProcesses ? (
+            <form
+              onSubmit={handleSubmit}
+              className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20"
+            >
+              <div className="space-y-6">
+                {questions.map((question, index) => (
+                  <div key={question.id} className="space-y-2">
+                    <label className="block text-white font-medium">
+                      {index + 1}. {question.questionText}
+                      {question.isRequired && (
+                        <span className="text-red-400 ml-1">*</span>
+                      )}
+                    </label>
+                    {renderInput(question)}
+                  </div>
+                ))}
+              </div>
 
-            <div className="mt-8 text-center">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Generating SOP..." : "Generate SOP"}
-              </button>
+              <div className="mt-8 text-center">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Generating SOP..." : "Generate SOP"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Select Processes for SOP Generation
+                </h2>
+                <p className="text-gray-300">
+                  Choose the business processes you want to generate SOPs for:
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {processes.map((process, index) => (
+                  <label key={index} className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedProcesses.includes(process)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedProcesses((prev) => [...prev, process]);
+                        } else {
+                          setSelectedProcesses((prev) =>
+                            prev.filter((p) => p !== process)
+                          );
+                        }
+                      }}
+                      className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                    />
+                    <span className="text-white font-medium">{process}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => {
+                    console.log("Selected processes:", selectedProcesses);
+                    alert(
+                      `Selected processes: ${selectedProcesses.join(", ")}`
+                    );
+                    // Here you can add logic to proceed with SOP generation for selected processes
+                  }}
+                  disabled={selectedProcesses.length === 0}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Generate SOPs for Selected Processes
+                </button>
+              </div>
             </div>
-          </form>
+          )}
         </div>
       </div>
     </div>
