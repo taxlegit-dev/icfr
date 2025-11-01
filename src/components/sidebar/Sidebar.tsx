@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminLinks, userLinks } from "@/lib/sidebarLinks";
 import { LogOut } from "lucide-react";
+import { UserCircle } from "lucide-react";
 
 interface SidebarProps {
   role?: string;
