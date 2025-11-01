@@ -18,15 +18,26 @@ export default function Sidebar({ role = "user" }: SidebarProps) {
   // Separate main menu and bottom menu
   const mainMenuItems = links.filter((link) => link.title !== "Logout");
   const bottomMenuItems = [
-    ...links.filter(
-      (link) => link.title === "Profile" || link.title === "Settings"
-    ),
-    {
-      title: "Logout",
-      href: "/logout",
-      icon: LogOut,
-    },
-  ];
+  ...links.filter(
+    (link) =>
+      link.title === "Profile" ||
+      link.title === "Settings" ||
+      link.title === "Change Password"
+  ),
+  {
+    title: "Change Password",
+    href: role.toLowerCase() === "admin"
+      ? "/admin/change-password"
+      : "/change-password",
+    icon: UserCircle, // you can also use Lock if preferred
+  },
+  {
+    title: "Logout",
+    href: "/logout",
+    icon: LogOut,
+  },
+];
+
 
   const isActive = (href: string) => pathname === href;
 

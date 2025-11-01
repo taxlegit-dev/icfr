@@ -52,6 +52,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   createdAt     DateTime  @default(now())
+  isDeleted     Boolean   @default(false)
 }
 
 model OTP {

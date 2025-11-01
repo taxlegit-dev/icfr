@@ -1,36 +1,38 @@
 'use client';
 import { useEffect, useState, useMemo } from "react";
-import { User, Mail, Phone, Shield, Clock, Search } from "lucide-react";
+import { User, Mail, Phone, Shield, Clock, Search, Trash2 } from "lucide-react";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const res = await fetch("/api/users");
-        if (!res.ok) throw new Error(`Error: ${res.status}`);
-        const data = await res.json();
-        setUsers(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchUsers();
   }, []);
 
-  const getRoleBadgeColor = (role: string) => {
-    return role === "ADMIN"
+  async function fetchUsers() {
+    try {
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const data = await res.json();
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const getRoleBadgeColor = (role: string) =>
+    role === "ADMIN"
       ? "bg-purple-100 text-purple-800"
       : "bg-blue-100 text-blue-800";
-  };
 
-  // ✅ Filtered users based on search
   const filteredUsers = useMemo(() => {
     const query = searchTerm.toLowerCase();
     return users.filter((user) =>
@@ -39,6 +41,34 @@ export default function UsersPage() {
         .some((field) => field.toLowerCase().includes(query))
     );
   }, [users, searchTerm]);
+
+  const handleDeleteClick = (user: any) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+    setDeleteLoading(userToDelete.id);
+
+    try {
+      const res = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userToDelete.id }),
+      });
+
+      if (!res.ok) throw new Error("Failed to delete user");
+
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    } catch (err: any) {
+      setError("Failed to delete user");
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -81,14 +111,13 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Total Users */}
             <div className="bg-indigo-50 text-indigo-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm">
               Total Users:{" "}
               <span className="font-semibold">{filteredUsers.length}</span>
             </div>
           </div>
 
-          {/* ✅ Search Bar */}
+          {/* Search */}
           <div className="mt-6 relative max-w-sm">
             <input
               type="text"
@@ -99,7 +128,6 @@ export default function UsersPage() {
             />
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           </div>
-
         </div>
 
         {/* Table */}
@@ -108,30 +136,11 @@ export default function UsersPage() {
             <table className="w-full">
               <thead className="bg-gray-800 text-white">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Name
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      Email
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      Phone
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Role
-                    </div>
-                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Phone</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Role</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,37 +151,14 @@ export default function UsersPage() {
                       className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"
                         } hover:bg-indigo-50 transition-colors duration-150`}
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-indigo-600 font-semibold text-sm">
-                              {user.firstName?.[0]}
-                              {user.lastName?.[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {user.firstName} {user.lastName}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              ID: {user.id.slice(0, 8)}...
-                            </div>
-                          </div>
-                        </div>
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {user.firstName} {user.lastName}
                       </td>
                       <td className="px-6 py-4 text-gray-700">
-                        {user.email || (
-                          <span className="text-gray-400 italic">
-                            Not provided
-                          </span>
-                        )}
+                        {user.email || <span className="text-gray-400 italic">Not provided</span>}
                       </td>
                       <td className="px-6 py-4 text-gray-700">
-                        {user.phone || (
-                          <span className="text-gray-400 italic">
-                            Not provided
-                          </span>
-                        )}
+                        {user.phone || <span className="text-gray-400 italic">Not provided</span>}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -184,14 +170,20 @@ export default function UsersPage() {
                           {user.role}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDeleteClick(user)}
+                          disabled={deleteLoading === user.id}
+                          className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="text-center py-6 text-gray-500 italic"
-                    >
+                    <td colSpan={5} className="text-center py-6 text-gray-500 italic">
                       No users found matching "{searchTerm}"
                     </td>
                   </tr>
@@ -201,6 +193,42 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                Delete User
+              </h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete this user? This action cannot be undone.
+                </p>
+                <p className="mt-2 text-sm font-medium text-gray-900">
+                  {userToDelete.firstName} {userToDelete.lastName} ({userToDelete.email || "No email"})
+                </p>
+              </div>
+              <div className="flex items-center px-4 py-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-900 text-base font-medium rounded-md w-full mr-2 hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteLoading === userToDelete.id}
+                  className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-full ml-2 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteLoading === userToDelete.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
