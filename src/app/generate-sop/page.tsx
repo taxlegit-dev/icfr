@@ -15,6 +15,24 @@ interface Question {
 
 type AnswerValue = string | number | File | string[] | null;
 
+interface Step {
+  step_no: number;
+  action: string;
+  risk: string;
+  mitigation: string;
+}
+
+interface Task {
+  task: string;
+  steps: Step[];
+}
+
+interface GeneratedSOP {
+  process: string;
+  subprocess: string;
+  tasks: Task[];
+}
+
 export default function GenerateSOPPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -35,6 +53,9 @@ export default function GenerateSOPPage() {
   const [showSubprocesses, setShowSubprocesses] = useState(false);
   const [loadingSubprocesses, setLoadingSubprocesses] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [generatingSOPs, setGeneratingSOPs] = useState(false);
+  const [generatedSOPs, setGeneratedSOPs] = useState<GeneratedSOP[]>([]);
+  const [showSOPs, setShowSOPs] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -163,6 +184,48 @@ export default function GenerateSOPPage() {
       alert("Failed to generate subprocesses. Please try again.");
     } finally {
       setLoadingSubprocesses(false);
+    }
+  };
+
+  const handleGenerateSOPs = async () => {
+    const selected = Object.entries(selectedSubprocesses).flatMap(
+      ([process, subs]) => subs.map((sub) => ({ process, subprocess: sub }))
+    );
+
+    if (selected.length === 0) return;
+
+    setGeneratingSOPs(true);
+
+    try {
+      // Parallel API calls for each selected subprocess
+      const promises = selected.map(async ({ process, subprocess }) => {
+        const response = await fetch("/api/generate-detailed-sop", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ process, subprocess }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            `Failed to generate SOP for ${process} - ${subprocess}: ${errorData.error}`
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      });
+
+      const results = await Promise.all(promises);
+      setGeneratedSOPs(results);
+      setShowSOPs(true);
+    } catch (error) {
+      console.error("Error generating SOPs:", error);
+      alert("Failed to generate SOPs. Please try again.");
+    } finally {
+      setGeneratingSOPs(false);
     }
   };
 
@@ -404,6 +467,72 @@ export default function GenerateSOPPage() {
                 </button>
               </div>
             </div>
+          ) : showSOPs ? (
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Generated SOPs
+                </h2>
+                <p className="text-gray-300">
+                  Here are the detailed SOPs for your selected subprocesses:
+                </p>
+              </div>
+
+              <div className="space-y-8">
+                {generatedSOPs.map((sop, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-700/50 rounded-lg p-6 border border-gray-600"
+                  >
+                    <h3 className="text-xl font-semibold text-purple-400 mb-2">
+                      {sop.process} - {sop.subprocess}
+                    </h3>
+                    <div className="space-y-4">
+                      {sop.tasks.map((task: Task, taskIndex: number) => (
+                        <div
+                          key={taskIndex}
+                          className="bg-gray-800/50 rounded p-4"
+                        >
+                          <h4 className="text-lg font-medium text-white mb-2">
+                            {task.task}
+                          </h4>
+                          <div className="space-y-2">
+                            {task.steps.map((step: Step, stepIndex: number) => (
+                              <div key={stepIndex} className="ml-4">
+                                <p className="text-gray-300">
+                                  <strong className="text-purple-300">
+                                    Step {step.step_no}:
+                                  </strong>{" "}
+                                  {step.action}
+                                </p>
+                                <p className="text-red-400 ml-6">
+                                  <strong>Risk:</strong> {step.risk}
+                                </p>
+                                <p className="text-green-400 ml-6">
+                                  <strong>Mitigation:</strong> {step.mitigation}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => {
+                    setShowSOPs(false);
+                    setGeneratedSOPs([]);
+                  }}
+                  className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition"
+                >
+                  Generate More SOPs
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20">
               <div className="text-center mb-6">
@@ -506,17 +635,17 @@ export default function GenerateSOPPage() {
 
               <div className="mt-8 text-center">
                 <button
-                  onClick={() => {
-                    console.log("Selected subprocesses:", selectedSubprocesses);
-                    alert("Subprocesses selected! Ready for SOP generation.");
-                    // Here you can add logic to proceed with SOP generation for selected subprocesses
-                  }}
-                  disabled={Object.values(selectedSubprocesses).every(
-                    (arr) => arr.length === 0
-                  )}
+                  onClick={handleGenerateSOPs}
+                  disabled={
+                    Object.values(selectedSubprocesses).every(
+                      (arr) => arr.length === 0
+                    ) || generatingSOPs
+                  }
                   className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Generate SOPs for Selected Subprocesses
+                  {generatingSOPs
+                    ? "Generating SOPs..."
+                    : "Generate SOPs for Selected Subprocesses"}
                 </button>
               </div>
             </div>
