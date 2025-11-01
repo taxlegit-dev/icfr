@@ -1,9 +1,18 @@
-'use client';
+"use client";
 import { useEffect, useState, useMemo } from "react";
 import { User, Mail, Phone, Shield, Clock, Search, Trash2 } from "lucide-react";
 
+interface AppUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  role: "ADMIN" | "USER" | string;
+}
+
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,6 +21,22 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        const data = await res.json();
+        setUsers(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
     fetchUsers();
   }, []);
 
@@ -37,7 +62,7 @@ export default function UsersPage() {
     const query = searchTerm.toLowerCase();
     return users.filter((user) =>
       [user.firstName, user.lastName, user.email, user.phone]
-        .filter(Boolean)
+        .filter((f): f is string => typeof f === "string")
         .some((field) => field.toLowerCase().includes(query))
     );
   }, [users, searchTerm]);
@@ -148,8 +173,9 @@ export default function UsersPage() {
                   filteredUsers.map((user, index) => (
                     <tr
                       key={user.id}
-                      className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                        } hover:bg-indigo-50 transition-colors duration-150`}
+                      className={`${
+                        index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                      } hover:bg-indigo-50 transition-colors duration-150`}
                     >
                       <td className="px-6 py-4 font-medium text-gray-900">
                         {user.firstName} {user.lastName}
@@ -183,8 +209,11 @@ export default function UsersPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-gray-500 italic">
-                      No users found matching "{searchTerm}"
+                    <td
+                      colSpan={4}
+                      className="text-center py-6 text-gray-500 italic"
+                    >
+                      No users found matching &quot;{searchTerm}&quot;
                     </td>
                   </tr>
                 )}

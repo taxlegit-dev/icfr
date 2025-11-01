@@ -40,6 +40,7 @@ export default function QuestionsListPage() {
       const data = await response.json();
       setQuestions(data.questions);
     } catch (err) {
+      console.log(err);
       setError("Failed to load questions");
     } finally {
       setLoading(false);
@@ -72,6 +73,7 @@ export default function QuestionsListPage() {
       setShowDeleteModal(false);
       setQuestionToDelete(null);
     } catch (err) {
+      console.log(err);
       setError("Failed to delete question");
     } finally {
       setDeleteLoading(null);
@@ -216,7 +218,7 @@ export default function QuestionsListPage() {
                   cannot be undone.
                 </p>
                 <p className="mt-2 text-sm font-medium text-gray-900">
-                  "{questionToDelete.questionText}"
+                  &quot;{questionToDelete.questionText}&quot;
                 </p>
               </div>
               <div className="flex items-center px-4 py-3">

@@ -1,10 +1,24 @@
-# TODO: Update Navbar for User Authentication
+# TODO: Integrate OpenAI API for SOP Generation
 
-- [x] Update src/components/Navbar.tsx to conditionally render based on session status
-- [x] Add circular profile avatar when user is logged in
-- [x] Implement dropdown menu on profile click with Dashboard and Logout options
-- [ ] Test the navbar functionality after login
+## Steps to Complete
 
-# TODO: Create Basic User Dashboard
+- [x] Create new API route: `src/app/api/generate-sop/route.ts`
 
-- [x] Create src/app/dashboard/page.tsx with a basic dashboard layout
+  - Implement POST endpoint to receive form answers
+  - Construct prompt with questions and answers
+  - Call OpenAI API using OPENAI_API_KEY and MODEL_ID
+  - Return JSON response with "processes" array
+
+- [x] Edit `src/app/generate-sop/page.tsx`
+  - Modify `handleSubmit` to send POST request to `/api/generate-sop` with answers
+  - Add state for `processes` (array) and `selectedProcesses` (array)
+  - After successful response, display processes as selectable checkboxes
+  - Handle loading and error states for the API call
+
+- [ ] Test OpenAI integration
+  - Verify API call works with sample data
+  - Check error handling for invalid responses or API failures
+
+- [ ] Ensure proper error handling
+  - Add try-catch in API route and frontend
+  - Display user-friendly error messages

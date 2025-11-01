@@ -1,103 +1,11 @@
-// "use client";
-
-// import Link from "next/link";
-// import { usePathname } from "next/navigation";
-// import { useSession, signOut } from "next-auth/react";
-
-// export default function Navbar() {
-//   const pathname = usePathname();
-//   const { data: session, status } = useSession();
-
-//   return (
-//     <nav className="bg-blue-600 p-4">
-//       <div className="container mx-auto flex justify-between items-center">
-//         <div className="text-white font-bold text-xl">ICFR</div>
-//         <ul className="flex space-x-4">
-//           <li>
-//             <Link
-//               href="/"
-//               className={`text-white hover:text-gray-200 ${
-//                 pathname === "/" ? "font-bold underline" : ""
-//               }`}
-//             >
-//               Home
-//             </Link>
-//           </li>
-//           <li>
-//             <Link
-//               href="/about"
-//               className={`text-white hover:text-gray-200 ${
-//                 pathname === "/about" ? "font-bold underline" : ""
-//               }`}
-//             >
-//               About
-//             </Link>
-//           </li>
-//           <li>
-//             <Link
-//               href="/contact"
-//               className={`text-white hover:text-gray-200 ${
-//                 pathname === "/contact" ? "font-bold underline" : ""
-//               }`}
-//             >
-//               Contact
-//             </Link>
-//           </li>
-//           {status === "loading" ? (
-//             <li className="text-white">Loading...</li>
-//           ) : session ? (
-//             <>
-//               <li className="text-white">
-//                 Welcome, {session.user?.firstName}!
-//               </li>
-//               <li>
-//                 <button
-//                   onClick={() => signOut()}
-//                   className="text-white hover:text-gray-200"
-//                 >
-//                   Logout
-//                 </button>
-//               </li>
-//             </>
-//           ) : (
-//             <>
-//               <li>
-//                 <Link
-//                   href="/login"
-//                   className={`text-white hover:text-gray-200 ${
-//                     pathname === "/login" ? "font-bold underline" : ""
-//                   }`}
-//                 >
-//                   Login
-//                 </Link>
-//               </li>
-//               <li>
-//                 <Link
-//                   href="/signup"
-//                   className={`text-white hover:text-gray-200 ${
-//                     pathname === "/signup" ? "font-bold underline" : ""
-//                   }`}
-//                 >
-//                   Signup
-//                 </Link>
-//               </li>
-//             </>
-//           )}
-//         </ul>
-//       </div>
-//     </nav>
-//   );
-// }
-
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
 import { Sparkles, User, ChevronDown, LogOut } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 
 export const Navbar = () => {
-  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -123,7 +31,7 @@ export const Navbar = () => {
 
         {/* Navigation Links */}
         <div className="hidden md:flex space-x-8 text-gray-300">
-          <Link href="#home" className="hover:text-purple-400 transition">
+          <Link href="/" className="hover:text-purple-400 transition">
             Home
           </Link>
           <Link href="#features" className="hover:text-purple-400 transition">
@@ -132,7 +40,10 @@ export const Navbar = () => {
           <Link href="#pricing" className="hover:text-purple-400 transition">
             Pricing
           </Link>
-          <Link href="#generate" className="hover:text-purple-400 transition">
+          <Link
+            href="generate-sop"
+            className="hover:text-purple-400 transition"
+          >
             Generate SOP
           </Link>
         </div>
@@ -148,10 +59,12 @@ export const Navbar = () => {
                 className="flex items-center space-x-2 px-4 py-2 bg-slate-800 rounded-full hover:bg-slate-700 transition"
               >
                 {session.user?.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt="Profile"
                     className="w-8 h-8 rounded-full"
+                    height={10}
+                    width={20}
                   />
                 ) : (
                   <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
